@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sample Bubble Chart</title>
+</head>
+<body>
+	<div id="chart" class="chart-container"><svg></svg></div>
+
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.6.0/d3.min.js"></script>
+	<script type="text/javascript" src="bubble.js"></script>
+	<script type="text/javascript">
+		d3.csv('data/sample.csv', function (error, data) {
+			// body...
+			if (error) {
+				console.error('Error fetching or parsing data.');
+				throw error;
+			}
+
+			var chart = bubbleChart().width(600).height(400);
+			d3.select('#chart').datum(data).call(chart);
+		});
+	</script>
+</body>
+</html>

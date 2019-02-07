@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+        .text {
+            font-size: x-large;
+            font-family: Montserrat, Helvetica, sans-serif;
+            text-align: center;
+        }
+
+        #display-box {
+            font-size: large;
+            font-family: Montserrat, Helvetica, sans-serif;
+            text-align: center;
+        }
+        
+        #figure-box {
+            max-width: 80%;
+            max-height: 30%;
+        }
+
+        .chart {
+            background: white;
+            align-content: center;
+            border-left: 1px dotted #555;
+            border-bottom: 1px dotted #555;
+            /* padding: 20px 20px 20px 20px; */
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="title-box" class="text">{{ title }}</div>
+    <div id="display-box" class="text"></div>
+
+    <div id="figure-box" class="chart">
+        <svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="{{ min_x }} {{ min_y }} {{ width }} {{ height }}">
+            <polyline id="line" points="{{ points_str }}" fill="none" stroke="#1074d9" stroke-width="1"></polyline>
+        </svg>
+    </div>
+
+    <script type="text/javascript">
+        var svg = document.querySelector('svg'),
+            pt = svg.createSVGPoint(),
+            display = document.querySelector('#display-box');
+
+        function cursorPoint(evt){
+            pt.x = evt.clientX; pt.y = evt.clientY;
+            var cursorpt =  pt.matrixTransform(svg.getScreenCTM().inverse());
+            console.log('x: ' + cursorpt.x + ', y: ' + cursorpt.y);
+            return cursorpt;
+        }
+
+        function showPoint(x, y) {
+            // display.style.display = 'block';
+            display.innerHTML = '';
+            display.innerHTML += ('x = ' + x + ' | y = ' + y);
+        }
+
+        function hidePoint() {
+            // display.style.display = 'none';
+            display.innerHTML = '';
+        }
+
+        svg.addEventListener('mousemove', function(evt){
+            var loc = cursorPoint(evt);
+            // Use loc.x and loc.y here
+
+            showPoint(loc.x, loc.y);
+        }, false);
+
+        svg.addEventListener('mouseout', hidePoint, false);
+    </script>
+
+</body>
+</html>

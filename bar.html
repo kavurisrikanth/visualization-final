@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='utf-8'?>
+<figure>
+	<figcaption>{{ title }}</figcaption>
+	<svg xmlns:xlink="http://www.w3.org/1999/xlink" class="image" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title" role="img" height="900px" width="auto">
+		<style type="text/css">
+			@import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+			figure {
+				display: inline-block;
+			}
+			figure figcaption {
+				text-align: top;
+			}
+			figcaption {
+				font-size: x-large;
+				font-family: Montserrat, Helvetica, sans-serif;
+				text-align: center;
+			}
+			svg.banner { width: 100%; height: auto; }
+			.image {
+				overflow-y: scroll;
+				overflow-x: scroll;
+			}
+			.bar {
+				fill: red;
+				height: 21px;
+				transition: fill 150s ease;
+				cursor: pointer;
+				font-family: Helvetica, sans-serif;
+			}
+			.bar text {
+				color: black;
+			}
+			.bar:hover,
+			.bar:focus {
+				fill: black;
+			}
+			.bar:hover text,
+			.bar:focus text {
+				fill: blue;
+				display: block;
+			}
+		</style>
+
+		{{ temp_pos = x_pos }}
+		{% for x in movies %}
+			{{ y = movies[x] }}
+			{{ h = int(y)/2 }}
+
+			<g class='bar'>
+				<rect width='{{ bar_width }}' height='{{ h }}' x='{{ temp_pos }}'></rect>
+				<!--<text x="{{ temp_pos }}" y="{{ h + 5 }}" dy=".35em">{{ y }}</text>-->
+				<title class='title'>x = {{ x }} | y = {{ y }}</title>
+			</g>
+
+			{{ temp_pos = temp_pos + bar_width + bar_gap }}
+		{% end %}
+
+	</svg>
+</figure>
