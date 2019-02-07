@@ -2,3 +2,5 @@
 images/
 venv
 pdfs/
+data/*.zip
+data/USvideos.csv
