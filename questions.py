@@ -1,3 +1,4 @@
+import json
 import math
 import time
 from pathlib import Path
@@ -615,14 +616,14 @@ class PartFiveTemplates:
         stocks = p3.read_snp()
 
         print(stocks.head())
-        scale_factor = 1
 
         for col in stocks:
-            f = Path('images/sparkline-' + col + '.svg')
-            # if f.exists():
-            #     continue
+            f = Path('images/sparkline-' + col + '.html')
+            if f.exists():
+                continue
                 
             ser = stocks[col]
+            ser = ser.apply(str_to_float)
             # print(ser)
             # print()
             # print()
@@ -630,21 +631,23 @@ class PartFiveTemplates:
             # x_max, y_max = 200, 200
             sd = ser.to_dict()
             title = 'Sparkline for stock of company: ' + col
+            print(sd[0])
             print(sd)
+            print(ser)
 
-            min_x, min_y = -1, ser.max()/2 + 1
-            width, height = len(ser) + 1, ser.max()/2
+            min_x, min_y = 0, ser.max()/2 + 1
+            width, height = len(ser), ser.max()/2
 
             ss = ''
             for day in sd:
-                ss += str(day * scale_factor)
+                ss += str(day)
                 ss += ','
-                ss += str(sd[day] * scale_factor)
+                ss += str(sd[day])
                 ss += ' '
 
             ss.strip(' ')
             loader = template.Loader('.')
-            html = loader.load('spark.html').generate(points_str=ss, min_x=min_x, min_y=min_y, width=width, height=height, title=title)
+            html = loader.load('spark.html').generate(sd=json.dumps(sd), points_str=ss, min_x=min_x, min_y=min_y, width=width, height=height, title=title)
 
             f = open('images/sparkline-' + col + '.html', 'w')
             f.write(html.decode('utf-8'))
@@ -654,7 +657,7 @@ class PartFiveTemplates:
             config = pdfkit.configuration(wkhtmltopdf=path_pdf)
             pdfkit.from_file('images/sparkline-' + col + '.html', 'pdfs/sparkline-' + col + '.pdf', configuration=config)
 
-            break
+            # break
 
 
 if __name__ == '__main__':
