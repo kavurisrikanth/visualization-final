@@ -1,19 +1,21 @@
-import json
-import math
-import time
-from pathlib import Path
+# Import statements
+import threading
 
-from requests import get
 from bs4 import BeautifulSoup
+from pathlib import Path
+from requests import get
 from selenium import webdriver
 from sklearn import metrics, linear_model
 from tornado import template
 
+import json
+import math
 import datetime
 import numpy as np
 import pandas as pd
 import pygal as pygal
 import pdfkit
+import time
 
 
 # Helper methods
@@ -51,9 +53,18 @@ def analyze_line(l):
 
 
 def str_to_float(s):
+    '''
+    Converts a number in string format to float. This is a bit of a specialized function. It converts
+    a number like 1,234 to 1234.
+    :param s: A variable, presumably a string.
+    :return: Floating point representation of s.
+    '''
+
+    # Do some basic validation. Required for the data we are handling.
     if not isinstance(s, str):
         return s
 
+    # Remove commas and convert the rest to float.
     s = s.replace(',', '')
     return float(s)
 
@@ -108,6 +119,7 @@ class PartOnePython:
         print(salaries.groupby(['Job']).median())
 
 
+# Second set of questions.
 class PartTwoHandlingBigData:
     # Basic URLs
     base_url = 'https://www.imdb.com/search/title?'
@@ -117,6 +129,12 @@ class PartTwoHandlingBigData:
     year_gt_url = 'release_date=2000-01-01,'
 
     def scrape_imdb(self):
+        '''
+        This function scrapes IMDB and extracts a whole lot of movies. This data is written to a file.
+        :return: Nothing
+        '''
+
+        # Create URL
         base_url = 'https://www.imdb.com'
         url = base_url + '/search/title?title_type=feature&countries=us&languages=en&count=250'
 
@@ -126,8 +144,11 @@ class PartTwoHandlingBigData:
         while contains_next:
             ans = []
             print('Inside loop')
+
+            # Throw a GET request
             response = get(url)
 
+            # Get data.
             html_soup = BeautifulSoup(response.text, 'html.parser')
             temp_c = html_soup.find_all('div', class_='lister-item mode-advanced')
             movie_containers = temp_c
@@ -135,6 +156,7 @@ class PartTwoHandlingBigData:
             print(type(movie_containers))
 
             for mc in movie_containers:
+                # Go through the movie containers and arrange data.
                 try:
                     title = mc.h3.a.text
                     # print(title)
@@ -147,16 +169,20 @@ class PartTwoHandlingBigData:
 
                     ans.append([title, rating, num_votes, year])
                 except Exception:
+                    # Ignore any errors.
                     continue
 
             print('ans len: ' + str(len(ans)))
             imdb_df = pd.DataFrame(ans, columns=['title', 'rating', 'num_votes', 'year'])
             print('saving to csv')
+
+            # Logic to add a header.
             if n == 0:
                 imdb_df.to_csv('data/imdb.csv', index=False, mode='a', header=True)
             else:
                 imdb_df.to_csv('data/imdb.csv', index=False, mode='a', header=False)
 
+            # Go to next link
             next_link = html_soup.find('a', class_='lister-page-next next-page')
             print(next_link)
             contains_next = (next_link is not None)
@@ -166,59 +192,16 @@ class PartTwoHandlingBigData:
 
             n += 1
 
+            # Stop at 300 links.
             if n == 300:
                 break
 
-        # Retiring the following code. But not deleting because I might need it later.
-        if False:
-            # Find the 20 most popular movies with a rank more than 8.0
-            url = self.base_url + self.type_url_feature + '&' + self.rating_gt_8_url
-
-            response = get(url)
-
-            html_soup = BeautifulSoup(response.text, 'html.parser')
-            movie_containers = html_soup.find_all('div', class_='lister-item mode-advanced')
-
-            top_20 = []
-
-            # Get the top 20.
-            for x in range(20):
-                m = movie_containers[x]
-
-                title = m.h3.a.text
-                rating = float(m.strong.text)
-
-                top_20.append((title, rating))
-
-            ans.append(top_20)
-
-            # Find the 20 best rated movies with over 40,000 votes in the 2000s (year >= 2000)
-            url = self.base_url + self.num_votes_gt_url + '&' + self.year_gt_url + '&sort=num_votes,desc'
-
-            response = get(url)
-
-            html_soup = BeautifulSoup(response.text, 'html.parser')
-            movie_containers = html_soup.find_all('div', class_='lister-item mode-advanced')
-
-            top_20 = []
-
-            # Get the top 20.
-            for x in range(20):
-                m = movie_containers[x]
-
-                title = m.h3.a.text
-                rating = float(m.strong.text)
-
-                votes_str = m.find('span', attrs={'name': 'nv'}).text
-                num_votes = int(votes_str.replace(',', ''))
-                y_str = m.h3.find('span', class_='lister-item-year text-muted unbold').text[1:5]
-                year = int(y_str.replace(',', ''))
-
-                top_20.append((title, rating, num_votes, year))
-
-            ans.append(top_20)
-
     def analyze_imdb(self):
+        '''
+        This method performs the needed analysis on the IMDB data.
+        :return: Nothing
+        '''
+
         # Check if the IMDB CSV file exists.
         f = Path('data/imdb.csv')
 
@@ -240,6 +223,7 @@ class PartTwoHandlingBigData:
         votes_over_40k = imdb_df.loc[(imdb_df['num_votes'] > 40000) & (imdb_df['year'] >= 2000)]
         print(votes_over_40k.head(20))
 
+    """
     def scrape_bse(self):
         # This method is not used.
         equities = pd.read_csv('data/EQ180119.CSV')
@@ -251,18 +235,53 @@ class PartTwoHandlingBigData:
         # This method can be used to iterate.
         # for c in codes:
         #     print(c)
+    """
 
     def is_dividend(self, line):
+        '''
+        This method checks if a stock line is a dividend line or a normal line.
+        :param line: Stock line
+        :return: Dividend line or not
+        '''
+
         pieces = line.split(' ')
         return True if len(pieces) < 7 else False
 
     def process_stock_line(self, line):
+        '''
+        This method processes a stock line
+        :param line: Stock line
+        :return: [date, closing price]
+        '''
         date = line[:12]
         line = line[13:]
 
         return [date, line.split(' ')[3]]
 
     def scrape_snp(self):
+        '''
+        This method scrapes S&P data.
+        To parallelize the downloads, this method uses threads.
+        :return: Nothing
+        '''
+
+        # Get the Wikipedia page and read the symbols.
+        data = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+        table = data[0]
+        tickers = table['Symbol'].tolist()
+
+        slices = [tickers[x: x+10] for x in range(0, len(tickers), 10)]
+
+        for piece in slices:
+            threading.Thread(target=self.scrape_snp_mini, args=[piece]).start()
+
+    def scrape_snp_mini(self, tickers):
+        '''
+        This method contains the code for ONE thread to scrape S&P data.
+        :param tickers: List of company symbols.
+        :return: Nothing.
+        '''
+
         # Get the timestamp for today and one month ago.
         today_ms = math.floor(time.time())
         one_month_ago = datetime.date.today() - datetime.timedelta(days=100)
@@ -272,17 +291,6 @@ class PartTwoHandlingBigData:
         option = webdriver.ChromeOptions()
         option.add_argument("--incognito")
         driver_path = "chromedriver.exe"
-
-        # Get the Wikipedia page and read the symbols.
-        data = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
-        table = data[0]
-        sliced_table = table[1:]
-        header = table.iloc[0]
-
-        corrected_table = sliced_table.rename(columns=header)
-
-        tickers = corrected_table['Symbol'].tolist()
-        print(len(tickers))
 
         # Iterate through the symbols and get closing prices.
         for ele in tickers:
@@ -330,12 +338,20 @@ class PartTwoHandlingBigData:
                 browser.quit()
 
     def analyze_snp(self):
+        '''
+        This method runs analysis on S&P data.
+        :return: Nothing.
+        '''
+
+        # First, scrape the S&P data.
         self.scrape_snp()
 
+        # For each CSV file (one per company)
         data_dir = 'data/prices/'
         pathlist = Path(data_dir).glob('*.csv')
         gain_list = []
 
+        # Perform the required analysis
         for p in pathlist:
             name = str(p).split('\\')[-1].split('.')[0]
             temp_df = pd.read_csv(p)
@@ -352,6 +368,11 @@ class PartTwoHandlingBigData:
 
 class PartThreeAnalysis:
     def read_imdb(self):
+        '''
+        This method reads the IMDB data and returns a DataFrame.
+        :return: IDMB DataFrame.
+        '''
+
         # Check if the IMDB CSV file exists.
         f = Path('data/imdb.csv')
 
@@ -465,6 +486,16 @@ class PartThreeAnalysis:
         print(diffs)
 
     def read_snp(self):
+        '''
+        Reads S&P data into a DataFrame and returns the DataFrame.
+        :return: S&P DataFrame.
+        '''
+
+        # Scrape data if required. The checks are done in the scrape_snp() method.
+        p2 = PartTwoHandlingBigData()
+        p2.scrape_snp()
+
+        # Read stocks data into DataFrame and return it.
         stocks = pd.DataFrame()
 
         data_dir = 'data/prices/'
@@ -548,29 +579,51 @@ class PartFourPlotting:
         chart.render_to_file('images/' + file_name)
 
     def get_imdb_scatterplot(self):
+        '''
+        Generates a scatterplot for IMDB data.
+        :return: Nothing.
+        '''
+
+        # Read IMDB data.
         p3 = PartThreeAnalysis()
         imdb_df = p3.read_imdb()
+
+        # Get all movies with more than 10000 votes.
         votes_over_10000 = imdb_df.loc[imdb_df['num_votes'] >= 10000]
         votes_over_10000.reset_index()
 
+        # Get the average # votes
         mean_votes = votes_over_10000['num_votes'].mean()
 
+        # Extract #votes and rating from the DF, and convert them to a list.
         r_and_nv = votes_over_10000[['num_votes', 'rating']]
         r_and_nv = list(map(tuple, r_and_nv.values))
 
+        # Generate a scatterplot.
         self.scatter(r_and_nv[:150], title='IMDB #votes vs. Rating', label='',
                      x_label='Number of votes', y_label='Rating', file_name='scatter_pre_norm.svg')
 
+        # Now normalize the data.
         r_and_nv = list(map(lambda x: (x[0]/mean_votes, x[1]), r_and_nv))
 
+        # And create another scatterplot.
         self.scatter(r_and_nv[:150], title='IMDB #votes vs. Normalized Rating', label='',
                      x_label='Number of votes', y_label='Rating', file_name='scatter_post_norm.svg')
 
     def get_corr_matrix(self):
+        '''
+        Generates a correlation matrix for S&P data.
+        :return: Nothing
+        '''
+
+        # Get data.
         p3 = PartThreeAnalysis()
         stocks = p3.read_snp()
+
+        # Pick 30 random stocks
         stocks = stocks.sample(30, axis=1)
 
+        # Create a heatmap.
         import seaborn as sns
 
         print(stocks.head())
@@ -586,14 +639,23 @@ class PartFourPlotting:
 
 class PartFiveTemplates:
     def bar_template(self):
+        '''
+        Tornado template to generate a bar plot for the IMDB data.
+        :return: Nothing.
+        '''
+
+        # Get IMDB data.
         p3 = PartThreeAnalysis()
         imdb_df = p3.read_imdb()
 
+        # Drop unnecessary columns.
         imdb_df.drop(['title', 'rating', 'num_votes'], axis=1, inplace=True)
 
+        # Group by year, get count, and convert to dictionary.
         gb = imdb_df.groupby(['year'])['year'].count()
         movies = gb.to_dict()
 
+        # Now create a bar plot.
         loader = template.Loader('.')
         html = loader.load('bar.html').generate(movies=movies,
                                                 bar_width = 8.1,
@@ -612,40 +674,45 @@ class PartFiveTemplates:
             pdfkit.from_file('images/bar-template.svg', 'pdfs/bar-template.pdf', configuration=config)
 
     def spark_template(self):
+        '''
+        Tornado template for generating a sparkline for each company in the S&P data.
+        :return: Nothing
+        '''
+
+        # Get S&P data.
         p3 = PartThreeAnalysis()
         stocks = p3.read_snp()
 
         print(stocks.head())
 
         for col in stocks:
+            # Check if a sparkline already exists. If it does, then move on.
             f = Path('images/sparkline-' + col + '.html')
             if f.exists():
                 continue
-                
+
+            # Extract stocks for one company.
             ser = stocks[col]
             ser = ser.apply(str_to_float)
-            # print(ser)
-            # print()
-            # print()
 
-            # x_max, y_max = 200, 200
+            # Convert to dict, since it's easier to process.
             sd = ser.to_dict()
-            title = 'Sparkline for stock of company: ' + col
-            print(sd[0])
-            print(sd)
-            print(ser)
 
+            # Required data for making the plot.
+            title = 'Sparkline for stock of company: ' + col
             min_x, min_y = 0, ser.max()/2 + 1
             width, height = len(ser), ser.max()/2
 
+            # Create a data string to make the sparkline with.
             ss = ''
             for day in sd:
                 ss += str(day)
                 ss += ','
                 ss += str(sd[day])
                 ss += ' '
-
             ss.strip(' ')
+
+            # Make a sparkline with the data.
             loader = template.Loader('.')
             html = loader.load('spark.html').generate(sd=json.dumps(sd), points_str=ss, min_x=min_x, min_y=min_y, width=width, height=height, title=title)
 
@@ -653,6 +720,7 @@ class PartFiveTemplates:
             f.write(html.decode('utf-8'))
             f.close()
 
+            # Convert to PDF also.
             path_pdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'
             config = pdfkit.configuration(wkhtmltopdf=path_pdf)
             pdfkit.from_file('images/sparkline-' + col + '.html', 'pdfs/sparkline-' + col + '.pdf', configuration=config)
@@ -673,11 +741,11 @@ if __name__ == '__main__':
         print()
         p1.q4()
 
-    if False:
+    if True:
         p2 = PartTwoHandlingBigData()
-        p2.scrape_snp()
+        # p2.scrape_snp()
         # p2.analyze_imdb()
-        # p2.analyze_snp()
+        p2.analyze_snp()
 
     if False:
         p3 = PartThreeAnalysis()
