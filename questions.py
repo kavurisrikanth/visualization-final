@@ -687,11 +687,12 @@ class PartFiveTemplates:
 
         for col in stocks:
             # Check if a sparkline already exists. If it does, then move on.
-            f = Path('images/sparkline-' + col + '.html')
-            if f.exists():
-                continue
+            # f = Path('images/sparkline-' + col + '.html')
+            # if f.exists():
+            #     continue
 
             # Extract stocks for one company.
+            print('company: ' + col)
             ser = stocks[col]
             ser = ser.apply(str_to_float)
 
@@ -700,21 +701,23 @@ class PartFiveTemplates:
 
             # Required data for making the plot.
             title = 'Sparkline for stock of company: ' + col
-            min_x, min_y = 0, ser.max()/2 + 1
-            width, height = len(ser), ser.max()/2
+            smax = ser.max()
+            min_x, min_y = 0,  -1
+            width, height = len(ser), 0.2 * smax
+            translate_y = -0.3 * smax
 
             # Create a data string to make the sparkline with.
             ss = ''
             for day in sd:
                 ss += str(day)
                 ss += ','
-                ss += str(sd[day])
+                ss += str((sd[day])/4)
                 ss += ' '
             ss.strip(' ')
 
             # Make a sparkline with the data.
             loader = template.Loader('.')
-            html = loader.load('spark.html').generate(sd=json.dumps(sd), points_str=ss, min_x=min_x, min_y=min_y, width=width, height=height, title=title)
+            html = loader.load('spark.html').generate(sd=json.dumps(sd), points_str=ss, min_x=min_x, min_y=min_y, width=width, height=height, translate_y=translate_y, title=title)
 
             f = open('images/sparkline-' + col + '.html', 'w')
             f.write(html.decode('utf-8'))
@@ -741,7 +744,7 @@ if __name__ == '__main__':
         print()
         p1.q4()
 
-    if True:
+    if False:
         p2 = PartTwoHandlingBigData()
         # p2.scrape_snp()
         # p2.analyze_imdb()

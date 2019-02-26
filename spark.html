@@ -19,15 +19,18 @@
         }
         
         #figure-box {
-            max-width: 80%;
-            max-height: 30%;
+            width: 80%;
+            height: 30%;
         }
 
         .chart {
             background: white;
             align-content: center;
-            border-left: 1px dotted #555;
-            border-bottom: 1px dotted #555;
+            padding: 2%;
+            border-left: 1.5px dotted #555;
+            border-right: 1.5px dotted #555;
+            border-top: 1.5px dotted #555;
+            border-bottom: 1.5px dotted #555;
             /* padding: 20px 20px 20px 20px; */
         }
 
@@ -36,10 +39,11 @@
 </head>
 <body>
     <div id="title-box" class="text">{{ title }}</div>
-    <div id="display-box" class="text"></div>
+    <div id="display-box" class="text"> </div>
+    <br>
 
     <svg id="figure-box" class="chart" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="{{ min_x }} {{ min_y }} {{ width }} {{ height }}">
-        <polyline id="line" points="{{ points_str }}" fill="none" stroke="#1074d9" stroke-width="1"></polyline>
+        <polyline id="line" points="{{ points_str }}" fill="none" stroke="#1074d9" stroke-width="0.5" transform="scale(1, -1) translate(0, {{ translate_y }})"></polyline>
     </svg>
 
     <script type="text/javascript">
@@ -48,20 +52,22 @@
             display = document.querySelector('#display-box'),
             sd = JSON.parse("{{ sd }}".replace(/&quot;/g,'"'));
 
-        console.log(sd);
-
         function cursorPoint(evt){
             pt.x = evt.clientX; pt.y = evt.clientY;
             var cursorpt =  pt.matrixTransform(svg.getScreenCTM().inverse());
+            bla = pt.matrixTransform(document.querySelector('#line').getScreenCTM().inverse());
+            console.log(bla);
+            console.log(bla.x + ', ' + bla.y);
             return cursorpt;
         }
 
         function showPoint(x, y) {
-            display.innerHTML = '';
+            display.innerHTML = ' ';
             rx = Math.round(x);
             ry = sd['' + rx];
             
-            if (rx < Object.keys(sd).length) {
+            if (rx >= 0 && rx < Object.keys(sd).length) {
+                display.innerHTML = '';
                 display.innerHTML += ('x = ' + rx + ' | y = ' + ry);
             }
         }
