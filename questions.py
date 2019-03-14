@@ -19,6 +19,9 @@ import time
 
 
 # Helper methods
+import common
+
+
 def is_pal(s):
     '''
     Check if a string is a palindrome.
@@ -656,17 +659,11 @@ class PartFiveTemplates:
         movies = gb.to_dict()
 
         # Now create a bar plot.
-        loader = template.Loader('.')
-        html = loader.load('bar.html').generate(movies=movies,
-                                                bar_width = 8.1,
-                                                bar_gap = 3,
-                                                x_pos = 3,
-                                                title='Number of movies per year.')
-        # f = open('images/bar-template-' + datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '.svg', 'w')
-
-        f = open('images/bar-template.svg', 'w')
-        f.write(html.decode('utf-8'))
-        f.close()
+        common.draw_barplot(values=movies,
+                          svg_file='images/bar-template.html',
+                          title='Number of movies per year.',
+                          x_label='Year',
+                          y_label='Number of movies')
 
         if False:
             path_pdf = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'
@@ -765,5 +762,5 @@ if __name__ == '__main__':
 
     if True:
         p5 = PartFiveTemplates()
-        # p5.bar_template()
-        p5.spark_template()
+        p5.bar_template()
+        # p5.spark_template()
