@@ -532,21 +532,6 @@ class PartThreeAnalysis:
 
 
 class PartFourPlotting:
-    def bar(self, data_list):
-        # Set up a chart object
-        chart = pygal.Bar()
-
-        # Set up x and y data
-        x_data = map(str, range(len(data_list)))
-        # y_data = data_list
-
-        # Plot
-        chart.add('Data', data_list)
-        chart.x_labels = x_data
-
-        # Finally, save the file.
-        chart.render_to_file('images/bar-' + datetime.datetime.today().strftime('%Y-%m-%d-%H-%M-%S') + '.svg')
-
     def line(self, data_list):
         # Set up chart object
         chart = pygal.Line()

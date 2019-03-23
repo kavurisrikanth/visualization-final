@@ -1,16 +1,14 @@
+import collections
+
+import pandas as pd
 from bs4 import BeautifulSoup
 from requests import get
 
 import common
 
 
-def analyze_str(s: str) -> None:
-    if ',' in s:
-        l = s.strip('\n').strip(' ').replace(',', '').split(' ')
-        for x in l:
-            if x not in genres:
-                genres[x] = 0
-            genres[x] = genres[x] + 1
+def str_to_list(s: str) -> list:
+    return s.strip('\n').strip(' ').replace(',', '').split(' ')
 
 
 # Create URL
@@ -18,13 +16,10 @@ base_url = 'https://www.imdb.com'
 url = base_url + '/search/title?title_type=feature&countries=us&languages=en&count=250'
 
 contains_next = True
+genres = {}
 n = 0
 
-genres = {}
-
-while contains_next:
-    ans = []
-    print('Inside loop')
+while contains_next and n < 5:
 
     # Throw a GET request
     response = get(url)
@@ -37,12 +32,27 @@ while contains_next:
     for mc in movie_containers:
         try:
             genre_text = mc.find('span', attrs={'class', 'genre'}).text
-            analyze_str(genre_text)
-        except Exception:
+            y_str = mc.h3.find('span', class_='lister-item-year text-muted unbold').text[1:5]
+            year = int(y_str.replace(',', ''))
+
+            if year not in genres:
+                genres[year] = collections.Counter()
+            genres[year].update(collections.Counter(str_to_list(genre_text)))
+        except Exception as e:
             continue
 
+    if False:
+        print(genres)
+        imdb_df = pd.DataFrame(genres)
+        print(imdb_df)
+
+        # Logic to add a header.
+        if n == 0:
+            imdb_df.to_csv('data/project_imdb.csv', index=False, mode='a', header=True)
+        else:
+            imdb_df.to_csv('data/project_imdb.csv', index=False, mode='a', header=False)
+
     next_link = html_soup.find('a', class_='lister-page-next next-page')
-    print(next_link)
     contains_next = (next_link is not None)
 
     if contains_next:
@@ -50,13 +60,21 @@ while contains_next:
 
     n += 1
 
-    if n == 25:
-        break
+sg = sorted(genres)
+x_labels = list(map(str, sg))
+
+data = [('Action', []), ('Adventure', []), ('Comedy', []), ('Drama', []), ('Fantasy', []), ('Horror', []), ('Thriller', [])]
+
+for year in sg:
+    for gt in data:
+        gt[1].append(genres[year][gt[0]])
+
+common.pygal_line(data, title='Genres per year', x_labels=x_labels, filename='images/project_line.html')
 
 
-print(genres)
-common.draw_barplot(values=genres,
-                    svg_file='images/project.html',
-                    title='Number of movies per genre',
-                    x_label='Genre',
-                    y_label='Number of movies')
+bar_data = collections.Counter()
+for g in genres:
+    bar_data.update(genres[g])
+
+common.pygal_bar(data_dict=bar_data, y_label='Genre', file_name='images/project_bar.html')
+# common.pygal_pie(data=genres, title='Number of movies per genre', filename='images/project.html')
