@@ -19,6 +19,7 @@ contains_next = True
 genres = {}
 n = 0
 
+# Scrape IMDB data
 while contains_next and n < 5:
 
     # Throw a GET request
@@ -31,10 +32,12 @@ while contains_next and n < 5:
 
     for mc in movie_containers:
         try:
+            # Get the genres and year
             genre_text = mc.find('span', attrs={'class', 'genre'}).text
             y_str = mc.h3.find('span', class_='lister-item-year text-muted unbold').text[1:5]
             year = int(y_str.replace(',', ''))
 
+            # Using collections because we care about counts
             if year not in genres:
                 genres[year] = collections.Counter()
             genres[year].update(collections.Counter(str_to_list(genre_text)))
@@ -52,6 +55,7 @@ while contains_next and n < 5:
         else:
             imdb_df.to_csv('data/project_imdb.csv', index=False, mode='a', header=False)
 
+    # Go to the next page
     next_link = html_soup.find('a', class_='lister-page-next next-page')
     contains_next = (next_link is not None)
 
@@ -60,15 +64,18 @@ while contains_next and n < 5:
 
     n += 1
 
+# Sort the genres
 sg = sorted(genres)
 x_labels = list(map(str, sg))
 
 data = [('Action', []), ('Adventure', []), ('Comedy', []), ('Drama', []), ('Fantasy', []), ('Horror', []), ('Thriller', [])]
 
+# Separate the dictionary into lists
 for year in sg:
     for gt in data:
         gt[1].append(genres[year][gt[0]])
 
+# Plot a line chart
 common.pygal_line(data, title='Genres per year', x_labels=x_labels, filename='images/project_line.html')
 
 
@@ -78,3 +85,8 @@ for g in genres:
 
 common.pygal_bar(data_dict=bar_data, y_label='Genre', file_name='images/project_bar.html')
 # common.pygal_pie(data=genres, title='Number of movies per genre', filename='images/project.html')
+
+for g in genres:
+    title = 'Genre count for year ' + str(g)
+    filename = 'images/project_pie_' + str(g) + '.html'
+    common.pygal_pie(data=genres[g], title=title, filename=filename)
