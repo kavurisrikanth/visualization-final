@@ -1,4 +1,5 @@
 import collections
+import os
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -11,64 +12,72 @@ def str_to_list(s: str) -> list:
     return s.strip('\n').strip(' ').replace(',', '').split(' ')
 
 
-# Create URL
-base_url = 'https://www.imdb.com'
-url = base_url + '/search/title?title_type=feature&countries=us&languages=en&count=250'
+def scrape_imdb():
 
-contains_next = True
-genres = {}
-n = 0
+    # Create URL
+    base_url = 'https://www.imdb.com'
+    url = base_url + '/search/title?title_type=feature&countries=us&languages=en&count=250'
 
-# Scrape IMDB data
-while contains_next and n < 5:
+    contains_next = True
+    genres = {}
+    n = 0
 
-    # Throw a GET request
-    response = get(url)
+    # Scrape IMDB data
+    while contains_next and n < 5:
 
-    # Get data.
-    html_soup = BeautifulSoup(response.text, 'html.parser')
-    temp_c = html_soup.find_all('div', class_='lister-item mode-advanced')
-    movie_containers = temp_c
+        # Throw a GET request
+        response = get(url)
 
-    for mc in movie_containers:
-        try:
-            # Get the genres and year
-            genre_text = mc.find('span', attrs={'class', 'genre'}).text
-            y_str = mc.h3.find('span', class_='lister-item-year text-muted unbold').text[1:5]
-            year = int(y_str.replace(',', ''))
+        # Get data.
+        html_soup = BeautifulSoup(response.text, 'html.parser')
+        temp_c = html_soup.find_all('div', class_='lister-item mode-advanced')
+        movie_containers = temp_c
 
-            # Using collections because we care about counts
-            if year not in genres:
-                genres[year] = collections.Counter()
-            genres[year].update(collections.Counter(str_to_list(genre_text)))
-        except Exception as e:
-            continue
+        for mc in movie_containers:
+            try:
+                # Get the genres and year
+                genre_text = mc.find('span', attrs={'class', 'genre'}).text
+                y_str = mc.h3.find('span', class_='lister-item-year text-muted unbold').text[1:5]
+                year = int(y_str.replace(',', ''))
 
-    if False:
-        print(genres)
-        imdb_df = pd.DataFrame(genres)
-        print(imdb_df)
+                # Using collections because we care about counts
+                if year not in genres:
+                    genres[year] = collections.Counter()
+                genres[year].update(collections.Counter(str_to_list(genre_text)))
+            except Exception as e:
+                continue
 
-        # Logic to add a header.
-        if n == 0:
-            imdb_df.to_csv('data/project_imdb.csv', index=False, mode='a', header=True)
-        else:
-            imdb_df.to_csv('data/project_imdb.csv', index=False, mode='a', header=False)
+        if False:
+            imdb_df = pd.DataFrame(genres)
 
-    # Go to the next page
-    next_link = html_soup.find('a', class_='lister-page-next next-page')
-    contains_next = (next_link is not None)
+            # Logic to add a header.
+            if n == 0:
+                imdb_df.to_csv(file, index=False, mode='a', header=True)
+            else:
+                imdb_df.to_csv(file, index=False, mode='a', header=False)
 
-    if contains_next:
-        url = base_url + next_link['href']
+        # Go to the next page
+        next_link = html_soup.find('a', class_='lister-page-next next-page')
+        contains_next = (next_link is not None)
 
-    n += 1
+        if contains_next:
+            url = base_url + next_link['href']
+
+        n += 1
+
+    return genres
+
+
+genres = scrape_imdb()
+print('genres: {}'.format(genres))
 
 # Sort the genres
 sg = sorted(genres)
 x_labels = list(map(str, sg))
 
-data = [('Action', []), ('Adventure', []), ('Comedy', []), ('Drama', []), ('Fantasy', []), ('Horror', []), ('Thriller', [])]
+data = [('Action', []), ('Adventure', []),
+        ('Comedy', []), ('Drama', []),
+        ('Fantasy', []), ('Horror', []), ('Thriller', [])]
 
 # Separate the dictionary into lists
 for year in sg:

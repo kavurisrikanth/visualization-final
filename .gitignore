@@ -4,3 +4,6 @@ venv
 pdfs/
 data/*.zip
 data/USvideos.csv
+*/__pycache__/**
+*/__pycache__
+**/*.pyc

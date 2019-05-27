@@ -1,5 +1,9 @@
+import os
+
 import pygal
 from tornado import template
+
+data_dir = os.path.join(os.getcwd(), 'data')
 
 
 def get_max_from_dict(d: dict) -> int:
